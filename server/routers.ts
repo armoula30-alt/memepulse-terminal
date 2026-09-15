@@ -2,7 +2,8 @@ import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { fetchLatestMarketSnapshot } from "./market-data";
+import { fetchLatestMarketSnapshot, fetchRiskReport, getTokenHistory } from "./market-data";
+import { z } from "zod";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -25,6 +26,12 @@ export const appRouter = router({
       observedAt: new Date().toISOString(),
       tokens: await fetchLatestMarketSnapshot(),
     })),
+    history: publicProcedure.input(z.object({ address: z.string().min(20).max(64) })).query(({ input }) => ({
+      address: input.address,
+      source: "server_snapshot_history",
+      points: getTokenHistory(input.address),
+    })),
+    risk: publicProcedure.input(z.object({ address: z.string().min(20).max(64) })).query(({ input }) => fetchRiskReport(input.address)),
   }),
 
   // TODO: add feature routers here, e.g.
