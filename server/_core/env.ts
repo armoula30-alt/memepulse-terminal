@@ -9,4 +9,5 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   geckoTerminalApiUrl: process.env.GECKO_TERMINAL_API_URL ?? "https://api.geckoterminal.com/api/v2",
   geckoTerminalApiKey: process.env.GECKO_TERMINAL_API_KEY ?? "",
+  pumpPortalApiKey: process.env.PUMPPORTAL_API_KEY ?? "",
 };
