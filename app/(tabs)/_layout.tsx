@@ -1,40 +1,21 @@
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
+import { Platform } from "react-native";
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Platform } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 56 + bottomPadding;
-
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarStyle: {
-          paddingTop: 8,
-          paddingBottom: bottomPadding,
-          height: tabBarHeight,
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
-          borderTopWidth: 0.5,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
+    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: "#76F2B6", tabBarInactiveTintColor: colors.muted, tabBarButton: HapticTab, tabBarStyle: { paddingTop: 7, paddingBottom: bottomPadding, height: 57 + bottomPadding, backgroundColor: "#07100F", borderTopColor: "#1C3A33", borderTopWidth: 0.5 } }}>
+      <Tabs.Screen name="index" options={{ title: "Pulse", tabBarIcon: ({ color }) => <IconSymbol size={23} name="chart.bar.fill" color={color} /> }} />
+      <Tabs.Screen name="scanner" options={{ title: "Scanner", tabBarIcon: ({ color }) => <IconSymbol size={23} name="waveform.path.ecg" color={color} /> }} />
+      <Tabs.Screen name="paper" options={{ title: "Paper", tabBarIcon: ({ color }) => <IconSymbol size={23} name="wallet.pass.fill" color={color} /> }} />
+      <Tabs.Screen name="alerts" options={{ title: "Alerts", tabBarIcon: ({ color }) => <IconSymbol size={23} name="bell.fill" color={color} /> }} />
+      <Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: ({ color }) => <IconSymbol size={23} name="gearshape.fill" color={color} /> }} />
     </Tabs>
   );
 }
