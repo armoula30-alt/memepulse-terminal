@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertMarketSnapshot, InsertUser, marketSnapshots, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,15 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function saveMarketSnapshots(rows: InsertMarketSnapshot[]) {
+  if (!rows.length) return;
+  const db = await getDb();
+  if (!db) return;
+  try { await db.insert(marketSnapshots).values(rows); } catch (error) { console.warn("[Database] Failed to save market snapshots:", error); }
+}
+
+export async function getMarketSnapshots(tokenAddress: string, limit = 240) {
+  const db = await getDb();
+  if (!db) return [];
+  try { return await db.select().from(marketSnapshots).where(eq(marketSnapshots.tokenAddress, tokenAddress)).orderBy(marketSnapshots.observedAt).limit(limit); } catch (error) { console.warn("[Database] Failed to read market snapshots:", error); return []; }
+}

@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { double, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -25,4 +25,17 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const marketSnapshots = mysqlTable("market_snapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  tokenAddress: varchar("tokenAddress", { length: 64 }).notNull(),
+  observedAt: timestamp("observedAt").notNull(),
+  priceUsd: double("priceUsd"),
+  liquidityUsd: double("liquidityUsd").notNull(),
+  volume1hUsd: double("volume1hUsd").notNull(),
+  change1hPct: double("change1hPct").notNull(),
+  buys1h: int("buys1h").notNull(),
+  sells1h: int("sells1h").notNull(),
+});
+
+export type MarketSnapshot = typeof marketSnapshots.$inferSelect;
+export type InsertMarketSnapshot = typeof marketSnapshots.$inferInsert;

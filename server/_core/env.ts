@@ -7,4 +7,6 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  geckoTerminalApiUrl: process.env.GECKO_TERMINAL_API_URL ?? "https://api.geckoterminal.com/api/v2",
+  geckoTerminalApiKey: process.env.GECKO_TERMINAL_API_KEY ?? "",
 };
