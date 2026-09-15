@@ -15,5 +15,6 @@ const MAPPING = {
   "wallet.pass.fill": "account-balance-wallet",
   "bell.fill": "notifications",
   "gearshape.fill": "settings",
+  "flask.fill": "science",
 } as IconMapping;
 export function IconSymbol({ name, size = 24, color, style }: { name: IconSymbolName; size?: number; color: string | OpaqueColorValue; style?: StyleProp<TextStyle>; weight?: SymbolWeight }) { return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />; }
