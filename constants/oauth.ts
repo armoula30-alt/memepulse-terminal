@@ -17,6 +17,11 @@ const env = {
   deepLinkScheme: schemeFromBundleId,
 };
 
+// Native release builds do not have a browser hostname from which to derive
+// the API host. Keep the public read-only deployment as a safe fallback so
+// an APK built without local environment variables still receives market data.
+const PUBLIC_API_FALLBACK = "https://memeplustr-g6vqezot.manus.space";
+
 export const OAUTH_PORTAL_URL = env.portal;
 export const OAUTH_SERVER_URL = env.server;
 export const APP_ID = env.appId;
@@ -45,8 +50,8 @@ export function getApiBaseUrl(): string {
     }
   }
 
-  // Fallback to empty (will use relative URL)
-  return "";
+  // Native release fallback. Relative URLs do not work in a standalone APK.
+  return PUBLIC_API_FALLBACK;
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";
