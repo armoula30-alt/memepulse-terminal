@@ -86,6 +86,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    "expo-background-task",
     ["expo-notifications", { sounds: ["./assets/sounds/cashier.wav"] }],
     [
       "expo-audio",
