@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { opportunityScore } from "@/lib/meme-pulse";
 const P = { bg: "#07100F", surface: "#0D1B18", border: "#1C3A33", text: "#F2F8F5", muted: "#88A69A", mint: "#76F2B6", mintSoft: "#143E30", amber: "#F8C36A", red: "#FF7B80", blue: "#8BB8FF" };
 export default function HomeScreen() {
-  const [watching, setWatching] = useState<string[]>([]); const [scanRunning, setScanRunning] = useState(true); const market = trpc.market.latest.useQuery(undefined, { staleTime: 30_000, refetchInterval: 60_000 });
+  const [watching, setWatching] = useState<string[]>([]); const [scanRunning, setScanRunning] = useState(true); const market = trpc.market.latest.useQuery(undefined, { staleTime: 5_000, refetchInterval: 15_000 });
   const radar = useMemo(() => (market.data?.tokens ?? []).map((coin) => ({ ...coin, score: opportunityScore({ liquidityUsd: coin.liquidityUsd, volume1hUsd: coin.volume1hUsd, momentumPct: coin.change1hPct, risk: coin.liquidityUsd < 25_000 ? "EXTREME" : coin.liquidityUsd < 75_000 ? "HIGH" : "MED" }) })).sort((a, b) => b.score - a.score).slice(0, 3), [market.data]);
   const marketCap = radar.reduce((sum, item) => sum + (item.liquidityUsd || 0), 0); const volume = radar.reduce((sum, item) => sum + item.volume24hUsd, 0); const topScore = radar[0]?.score ?? null;
   const money = (v: number) => v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `$${(v / 1_000).toFixed(1)}K` : `$${v.toFixed(0)}`;

@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { fetchHistoricalOhlcv, fetchLatestMarketSnapshot, fetchRiskReport, fetchTokenSafety, forecastToken, getTokenHistory, videoStrategySignal, type MarketToken } from "./market-data";
+import { fetchHistoricalOhlcv, fetchLatestMarketSnapshot, fetchRiskReport, fetchTokensByAddresses, fetchTokenSafety, forecastToken, getTokenHistory, videoStrategySignal, type MarketToken } from "./market-data";
 import { z } from "zod";
 import { getNewTokenEvents, getNewTokenStreamStatus, startNewTokenStream } from "./new-token-stream";
 
@@ -43,7 +43,7 @@ export const appRouter = router({
     })),
     safety: publicProcedure.input(z.object({ address: z.string().min(20).max(64) })).query(({ input }) => fetchTokenSafety(input.address)),
     strategy: publicProcedure.input(z.object({ address: z.string().min(20).max(64) })).query(async ({ input }) => { const token = latestToken(input.address); return token ? videoStrategySignal(token, await getTokenHistory(input.address)) : null; }),
-    newTokens: publicProcedure.query(async () => { const tokens = latestTokens.length ? latestTokens : await fetchLatestMarketSnapshot(); const cutoff = Date.now() - 24 * 60 * 60 * 1000; return { source: "PumpPortal stream plus Dexscreener recent profiles", stream: getNewTokenStreamStatus(), events: getNewTokenEvents(), tokens: tokens.filter((token) => token.pairCreatedAt && new Date(token.pairCreatedAt).getTime() >= cutoff).sort((a, b) => new Date(b.pairCreatedAt ?? 0).getTime() - new Date(a.pairCreatedAt ?? 0).getTime()) }; }),
+    newTokens: publicProcedure.query(async () => { const events = getNewTokenEvents(); const streamTokens = await fetchTokensByAddresses(events.slice(0, 30).map((event) => event.mint)); const tokens = latestTokens.length ? latestTokens : await fetchLatestMarketSnapshot(); const cutoff = Date.now() - 24 * 60 * 60 * 1000; const combined = Array.from(new Map([...streamTokens, ...tokens].map((token) => [token.address, token])).values()); return { source: "PumpPortal stream plus Dexscreener recent profiles", observedAt: new Date().toISOString(), stream: getNewTokenStreamStatus(), events, tokens: combined.filter((token) => token.pairCreatedAt && new Date(token.pairCreatedAt).getTime() >= cutoff).sort((a, b) => new Date(b.pairCreatedAt ?? 0).getTime() - new Date(a.pairCreatedAt ?? 0).getTime()) }; }),
     risk: publicProcedure.input(z.object({ address: z.string().min(20).max(64) })).query(({ input }) => fetchRiskReport(input.address)),
     forecast: publicProcedure.input(z.object({ address: z.string().min(20).max(64) })).query(({ input }) => {
       const token = latestToken(input.address);
