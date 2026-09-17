@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as BackgroundTask from "expo-background-task";
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
+import { loadPumpPortalKey } from "./local-secrets";
 
 export const LOCAL_MARKET_TASK = "memepulse-local-market-monitor";
 const SEEN_KEY = "memepulse.local-monitor.seen.v1";
@@ -12,7 +13,30 @@ const PROFILE_URLS = ["https://api.dexscreener.com/token-profiles/latest/v1", "h
 type Profile = { chainId?: string; tokenAddress?: string; description?: string; url?: string };
 type Pair = { chainId?: string; baseToken?: { address?: string; symbol?: string; name?: string }; priceUsd?: string; liquidity?: { usd?: number }; volume?: { h1?: number }; priceChange?: { h1?: number }; txns?: { h1?: { buys?: number; sells?: number } }; url?: string };
 
+
+async function inspectPumpPortal(key: string) {
+  return new Promise<number>((resolve) => {
+    const WebSocketCtor = (globalThis as unknown as { WebSocket?: new (url: string) => any }).WebSocket;
+    if (!WebSocketCtor) { resolve(0); return; }
+    const socket = new WebSocketCtor(`wss://pumpportal.fun/api/data?api-key=${encodeURIComponent(key)}`);
+    let count = 0;
+    const timer = setTimeout(() => { try { socket.close(); } catch {} resolve(count); }, 7_000);
+    socket.onopen = () => socket.send(JSON.stringify({ method: "subscribeNewToken" }));
+    socket.onmessage = async (message: { data?: string }) => {
+      try {
+        const item = JSON.parse(String(message.data ?? "{}"));
+        if (item.txType !== "create" || !item.mint) return;
+        count += 1;
+        await Notifications.scheduleNotificationAsync({ content: { title: `PumpPortal catch: $${item.symbol ?? "TOKEN"}`, body: `New Solana token · initial buy ${item.initialBuy ?? "—"} · tap to inspect`, data: { address: String(item.mint) }, sound: "meme_cashier_v2.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
+      } catch {}
+    };
+    socket.onerror = () => { clearTimeout(timer); resolve(count); };
+  });
+}
+
 async function inspectMarket() {
+  const pumpPortalKey = await loadPumpPortalKey();
+  if (pumpPortalKey) return inspectPumpPortal(pumpPortalKey);
   const lists = await Promise.all(PROFILE_URLS.map(async (url) => { const response = await fetch(url); return response.ok ? await response.json() as Profile[] : []; }));
   const addresses = Array.from(new Set(lists.flat().filter((item) => item.chainId === "solana" && item.tokenAddress).map((item) => item.tokenAddress as string))).slice(0, 80);
   if (!addresses.length) return 0;
