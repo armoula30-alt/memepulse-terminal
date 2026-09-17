@@ -5,7 +5,7 @@ import * as TaskManager from "expo-task-manager";
 
 export const LOCAL_MARKET_TASK = "memepulse-local-market-monitor";
 const SEEN_KEY = "memepulse.local-monitor.seen.v1";
-void Notifications.setNotificationChannelAsync("meme-catch-v2", { name: "MemePulse Catch Signals", importance: Notifications.AndroidImportance.MAX, sound: "meme-cashier-v2.wav", vibrationPattern: [0, 180, 80, 280] });
+void Notifications.setNotificationChannelAsync("meme-catch-v2", { name: "MemePulse Catch Signals", importance: Notifications.AndroidImportance.MAX, sound: "meme_cashier_v2.wav", vibrationPattern: [0, 180, 80, 280] });
 
 const PROFILE_URLS = ["https://api.dexscreener.com/token-profiles/latest/v1", "https://api.dexscreener.com/token-boosts/latest/v1"];
 
@@ -33,7 +33,7 @@ async function inspectMarket() {
     if (score < 55 || seen.has(key)) continue;
     seen.add(key);
     notifications += 1;
-    await Notifications.scheduleNotificationAsync({ content: { title: `MemePulse catch: $${pair.baseToken.symbol ?? "TOKEN"}`, body: `Score ${score}/100 · price $${pair.priceUsd ?? "—"} · liquidity $${Math.round(liquidity).toLocaleString()}`, data: { address }, sound: "meme-cashier-v2.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
+    await Notifications.scheduleNotificationAsync({ content: { title: `MemePulse catch: $${pair.baseToken.symbol ?? "TOKEN"}`, body: `Score ${score}/100 · price $${pair.priceUsd ?? "—"} · liquidity $${Math.round(liquidity).toLocaleString()}`, data: { address }, sound: "meme_cashier_v2.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
   }
   await AsyncStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(seen).slice(-500)));
   return notifications;
