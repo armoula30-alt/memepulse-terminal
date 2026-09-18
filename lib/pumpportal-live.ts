@@ -11,7 +11,7 @@ function notify(item: any) {
   if (!mint || item.txType !== "create") return;
   const initialBuy = Number(item.initialBuy ?? 0);
   const marketCapSol = Number(item.marketCapSol ?? 0);
-  void Notifications.scheduleNotificationAsync({ content: { title: `New launch: $${String(item.symbol ?? "TOKEN")}`, body: `Early flow detected · initial buy ${initialBuy || "—"} · market cap ${marketCapSol ? `${marketCapSol.toFixed(2)} SOL` : "—"}`, data: { address: mint }, sound: "meme_cashier_v2.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
+  void Notifications.scheduleNotificationAsync({ content: { title: `New launch: $${String(item.symbol ?? "TOKEN")}`, body: `Early flow detected · initial buy ${initialBuy || "—"} · market cap ${marketCapSol ? `${marketCapSol.toFixed(2)} SOL` : "—"}`, data: { address: mint }, sound: "shopify_catch.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
 }
 
 async function connect() {

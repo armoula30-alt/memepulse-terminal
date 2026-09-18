@@ -6,7 +6,7 @@ import { loadPumpPortalKey } from "./local-secrets";
 
 export const LOCAL_MARKET_TASK = "memepulse-local-market-monitor";
 const SEEN_KEY = "memepulse.local-monitor.seen.v1";
-void Notifications.setNotificationChannelAsync("meme-catch-v2", { name: "MemePulse Catch Signals", importance: Notifications.AndroidImportance.MAX, sound: "meme_cashier_v2.wav", vibrationPattern: [0, 180, 80, 280] });
+void Notifications.setNotificationChannelAsync("meme-catch-v2", { name: "MemePulse Catch Signals", importance: Notifications.AndroidImportance.MAX, sound: "shopify_catch.wav", vibrationPattern: [0, 180, 80, 280] });
 
 const PROFILE_URLS = ["https://api.dexscreener.com/token-profiles/latest/v1", "https://api.dexscreener.com/token-boosts/latest/v1"];
 
@@ -27,7 +27,7 @@ async function inspectPumpPortal(key: string) {
         const item = JSON.parse(String(message.data ?? "{}"));
         if (item.txType !== "create" || !item.mint) return;
         count += 1;
-        await Notifications.scheduleNotificationAsync({ content: { title: `PumpPortal catch: $${item.symbol ?? "TOKEN"}`, body: `New Solana token · initial buy ${item.initialBuy ?? "—"} · tap to inspect`, data: { address: String(item.mint) }, sound: "meme_cashier_v2.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
+        await Notifications.scheduleNotificationAsync({ content: { title: `PumpPortal catch: $${item.symbol ?? "TOKEN"}`, body: `New Solana token · initial buy ${item.initialBuy ?? "—"} · tap to inspect`, data: { address: String(item.mint) }, sound: "shopify_catch.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
       } catch {}
     };
     socket.onerror = () => { clearTimeout(timer); resolve(count); };
@@ -57,7 +57,7 @@ async function inspectMarket() {
     if (score < 55 || seen.has(key)) continue;
     seen.add(key);
     notifications += 1;
-    await Notifications.scheduleNotificationAsync({ content: { title: `MemePulse catch: $${pair.baseToken.symbol ?? "TOKEN"}`, body: `Score ${score}/100 · price $${pair.priceUsd ?? "—"} · liquidity $${Math.round(liquidity).toLocaleString()}`, data: { address }, sound: "meme_cashier_v2.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
+    await Notifications.scheduleNotificationAsync({ content: { title: `MemePulse catch: $${pair.baseToken.symbol ?? "TOKEN"}`, body: `Score ${score}/100 · price $${pair.priceUsd ?? "—"} · liquidity $${Math.round(liquidity).toLocaleString()}`, data: { address }, sound: "shopify_catch.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
   }
   await AsyncStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(seen).slice(-500)));
   return notifications;
