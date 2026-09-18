@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { classifySignalOutcome, isStrictEarlyFlow } from "../lib/signal-outcomes";
 
-const point = (minutes: number, priceUsd: number, change1hPct = 5) => ({ capturedAt: new Date(Date.now() - minutes * 60_000).toISOString(), priceUsd, marketCapUsd: 20_000, liquidityUsd: 12_000, change1hPct, buys1h: 20, sells1h: 10 });
+const point = (minutes: number, priceUsd: number, change1hPct = 5) => ({ capturedAt: new Date(Date.now() - minutes * 60_000).toISOString(), priceUsd, marketCapUsd: 20_000, liquidityUsd: 12_000, change1hPct, change24hPct: 5, buys1h: 20, sells1h: 10 });
 
 describe("signal outcomes", () => {
   it("counts x10 only after the signal price, not from an unrelated ATH", () => {

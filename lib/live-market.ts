@@ -46,9 +46,13 @@ export async function captureLiveMarket(tokens: LiveMarketTokenInput[]) {
     const strictEarly = isStrictEarlyFlow({ ageMinutes, liquidityUsd: token.liquidityUsd, volume1hUsd: token.volume1hUsd, change1hPct: token.change1hPct, buys1h: token.buys1h, sells1h: token.sells1h, priceUsd: token.priceUsd, marketCapUsd: token.marketCapUsd });
     const change = token.change24hPct;
     const signal: LiveMarketItem["signal"] = change >= 10_000 ? "X100_CANDIDATE" : change >= 900 ? "X10_CANDIDATE" : token.liquidityUsd < 5_000 || token.change1hPct < -25 ? "RISK" : strictEarly ? "EARLY_FLOW" : "MOMENTUM";
-    const snapshots = [...(previous?.snapshots ?? []), { capturedAt, priceUsd: token.priceUsd, marketCapUsd: token.marketCapUsd, liquidityUsd: token.liquidityUsd, change1hPct: token.change1hPct, buys1h: token.buys1h, sells1h: token.sells1h }].slice(-240);
-    const firstSignalAt = previous?.firstSignalAt ?? (strictEarly ? capturedAt : null);
-    const firstSignalPriceUsd = previous?.firstSignalPriceUsd ?? (strictEarly ? token.priceUsd : null);
+    const snapshot: SignalSnapshot = { capturedAt, priceUsd: token.priceUsd, marketCapUsd: token.marketCapUsd, liquidityUsd: token.liquidityUsd, change1hPct: token.change1hPct, change24hPct: token.change24hPct, buys1h: token.buys1h, sells1h: token.sells1h };
+    const snapshots = [...(previous?.snapshots ?? []), snapshot].slice(-240);
+    // Legacy records did not contain snapshots. Start their measurement at the first
+    // observation after this version; never fabricate historical performance.
+    const trackable = signal !== "RISK";
+    const firstSignalAt = previous?.firstSignalAt ?? (trackable ? capturedAt : null);
+    const firstSignalPriceUsd = previous?.firstSignalPriceUsd ?? (trackable ? token.priceUsd : null);
     const first = firstSignalAt ? snapshots.find((point) => point.capturedAt === firstSignalAt) : undefined;
     const outcome = classifySignalOutcome(first, snapshots);
     byAddress.set(token.address, { ...token, capturedAt, signal, peakChangePct: Math.max(previous?.peakChangePct ?? 0, change), firstSignalAt, firstSignalPriceUsd, snapshots, outcome: outcome.outcome, currentMultiple: outcome.multiple, maxMultiple: outcome.maxMultiple, drawdownPct: outcome.drawdownPct });

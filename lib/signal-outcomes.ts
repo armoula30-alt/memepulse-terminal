@@ -1,4 +1,4 @@
-export type SignalSnapshot = { capturedAt: string; priceUsd: number | null; marketCapUsd: number; liquidityUsd: number; change1hPct: number; buys1h: number; sells1h: number };
+export type SignalSnapshot = { capturedAt: string; priceUsd: number | null; marketCapUsd: number; liquidityUsd: number; change1hPct: number; change24hPct: number; buys1h: number; sells1h: number };
 export type SignalOutcome = "PENDING" | "NO_CONFIRMATION" | "POST_SIGNAL_X2" | "POST_SIGNAL_X5" | "POST_SIGNAL_X10" | "POST_SIGNAL_X100" | "ALREADY_PUMPED_X10" | "ALREADY_PUMPED_X100" | "FAILED_AFTER_SIGNAL";
 
 export function classifySignalOutcome(first: SignalSnapshot | undefined, snapshots: SignalSnapshot[], now = Date.now()): { outcome: SignalOutcome; multiple: number | null; maxMultiple: number | null; drawdownPct: number | null } {
@@ -10,9 +10,11 @@ export function classifySignalOutcome(first: SignalSnapshot | undefined, snapsho
   const multiple = current / firstPrice;
   const ageMinutes = (now - new Date(first.capturedAt).getTime()) / 60_000;
   const drawdownPct = maxMultiple > 1 ? Number(((1 - multiple / maxMultiple) * 100).toFixed(1)) : null;
+  if (first.change24hPct >= 10_000) return { outcome: "ALREADY_PUMPED_X100", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
+  if (first.change24hPct >= 900) return { outcome: "ALREADY_PUMPED_X10", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
   if (ageMinutes < 1) return { outcome: "PENDING", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
   if (maxMultiple >= 100 && ageMinutes < 10 && first.change1hPct >= 900) return { outcome: "ALREADY_PUMPED_X100", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
-  if (maxMultiple >= 10 && ageMinutes < 10 && first.change1hPct >= 900) return { outcome: "ALREADY_PUMPED_X10", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
+  if (maxMultiple >= 10 && ageMinutes < 10 && (first.change1hPct >= 900 || first.marketCapUsd >= 100_000)) return { outcome: "ALREADY_PUMPED_X10", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
   if (maxMultiple >= 100) return { outcome: "POST_SIGNAL_X100", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
   if (maxMultiple >= 10) return { outcome: "POST_SIGNAL_X10", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
   if (maxMultiple >= 5) return { outcome: "POST_SIGNAL_X5", multiple: Number(multiple.toFixed(3)), maxMultiple: Number(maxMultiple.toFixed(3)), drawdownPct };
