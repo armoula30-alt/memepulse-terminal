@@ -16,7 +16,11 @@ export function startNewTokenStream() {
   if (!ENV.pumpPortalApiKey || socket) return;
   const uri = `wss://pumpportal.fun/api/data?api-key=${encodeURIComponent(ENV.pumpPortalApiKey)}`;
   socket = new WebSocket(uri);
-  socket.on("open", () => { connected = true; socket?.send(JSON.stringify({ method: "subscribeNewToken" })); });
+  socket.on("open", () => {
+    connected = true;
+    socket?.send(JSON.stringify({ method: "subscribeNewToken" }));
+    socket?.send(JSON.stringify({ method: "subscribeMigration" }));
+  });
   socket.on("message", (raw) => {
     try {
       const item = JSON.parse(String(raw));
