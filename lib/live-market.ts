@@ -28,7 +28,7 @@ export type LiveMarketItem = {
 };
 
 const KEY = "memepulse.live-market.v1";
-const MAX_ITEMS = 500;
+const MAX_ITEMS = 50;
 
 export async function loadLiveMarket(): Promise<LiveMarketItem[]> {
   try { return JSON.parse((await AsyncStorage.getItem(KEY)) ?? "[]") as LiveMarketItem[]; } catch { return []; }
@@ -40,6 +40,8 @@ export async function captureLiveMarket(tokens: LiveMarketTokenInput[]) {
   const current = await loadLiveMarket();
   const byAddress = new Map(current.map((item) => [item.address, item]));
   for (const token of tokens) {
+    const ageMs = token.pairCreatedAt ? Date.now() - new Date(token.pairCreatedAt).getTime() : -1;
+    if (token.priceUsd === null || token.priceUsd <= 0 || token.marketCapUsd <= 0 || token.liquidityUsd <= 0 || token.volume1hUsd <= 0 || ageMs < 0 || ageMs > 5 * 60_000) continue;
     const previous = byAddress.get(token.address);
     const capturedAt = new Date().toISOString();
     const ageMinutes = token.pairCreatedAt ? Math.max(0, (Date.now() - new Date(token.pairCreatedAt).getTime()) / 60_000) : 99999;
