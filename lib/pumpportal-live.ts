@@ -11,10 +11,10 @@ const pending = new Map<string, any>();
 const inFlight = new Set<string>();
 const lastAttempt = new Map<string, number>();
 const TOKENS_KEY = "memepulse.pumpportal.tokens.v1";
-const MAX_QUALIFIED_TOKENS = 50;
-const MAX_PENDING_TOKENS = 40;
+const MAX_QUALIFIED_TOKENS = 120;
+const MAX_PENDING_TOKENS = 80;
 const MAX_TOKEN_AGE_MS = 5 * 60_000;
-const ENRICH_CONCURRENCY = 3;
+const ENRICH_CONCURRENCY = 4;
 const RETRY_AFTER_MS = 15_000;
 const DEX_TOKEN_URL = "https://api.dexscreener.com/latest/dex/tokens/";
 
