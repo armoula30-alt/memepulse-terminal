@@ -14,6 +14,8 @@ const TOKENS_KEY = "memepulse.pumpportal.tokens.v1";
 const MAX_QUALIFIED_TOKENS = 120;
 const MAX_PENDING_TOKENS = 80;
 const MAX_TOKEN_AGE_MS = 5 * 60_000;
+const MIN_MARKET_CAP_USD = 5_000;
+const MIN_LIQUIDITY_USD = 10_000;
 const ENRICH_CONCURRENCY = 4;
 const RETRY_AFTER_MS = 15_000;
 const DEX_TOKEN_URL = "https://api.dexscreener.com/latest/dex/tokens/";
@@ -68,7 +70,7 @@ function complete(pair: Pair, seed: any): PumpPortalTokenSeed | null {
   const age = Date.now() - new Date(pairCreatedAt).getTime();
   const buys1h = Number(pair.txns?.h1?.buys ?? 0);
   const sells1h = Number(pair.txns?.h1?.sells ?? 0);
-  if (pair.chainId !== "solana" || !pair.baseToken?.address || !pair.pairAddress || !Number.isFinite(priceUsd) || priceUsd <= 0 || marketCapUsd <= 0 || liquidityUsd <= 0 || volume1hUsd <= 0 || buys1h <= sells1h || age < 0 || age > MAX_TOKEN_AGE_MS) return null;
+  if (pair.chainId !== "solana" || !pair.baseToken?.address || !pair.pairAddress || !Number.isFinite(priceUsd) || priceUsd <= 0 || marketCapUsd < MIN_MARKET_CAP_USD || liquidityUsd < MIN_LIQUIDITY_USD || volume1hUsd <= 0 || buys1h <= sells1h || age < 0 || age > MAX_TOKEN_AGE_MS) return null;
   return {
     address: pair.baseToken.address,
     symbol: String(pair.baseToken.symbol ?? seed.symbol ?? "TOKEN").slice(0, 16),
