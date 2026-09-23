@@ -12,11 +12,11 @@ const inFlight = new Set<string>();
 const lastAttempt = new Map<string, number>();
 const TOKENS_KEY = "memepulse.pumpportal.tokens.v1";
 const MAX_QUALIFIED_TOKENS = 120;
-const MAX_PENDING_TOKENS = 80;
+const MAX_PENDING_TOKENS = 150;
 const MAX_TOKEN_AGE_MS = 5 * 60_000;
 const MIN_MARKET_CAP_USD = 5_000;
 const MIN_LIQUIDITY_USD = 10_000;
-const ENRICH_CONCURRENCY = 4;
+const ENRICH_CONCURRENCY = 8;
 const RETRY_AFTER_MS = 15_000;
 const DEX_TOKEN_URL = "https://api.dexscreener.com/latest/dex/tokens/";
 
@@ -66,7 +66,10 @@ function complete(pair: Pair, seed: any): PumpPortalTokenSeed | null {
   const marketCapUsd = Number(pair.marketCap ?? pair.fdv ?? 0);
   const liquidityUsd = Number(pair.liquidity?.usd ?? 0);
   const volume1hUsd = Number(pair.volume?.h1 ?? 0);
-  const pairCreatedAt = pair.pairCreatedAt ? new Date(pair.pairCreatedAt).toISOString() : seed.createdAt;
+  // PumpPortal observes the launch directly; Dexscreener's pair timestamp can
+  // arrive late or refer to a later pool, so keep the launch observation time
+  // as the freshness clock for early-sniper decisions.
+  const pairCreatedAt = seed.createdAt ?? (pair.pairCreatedAt ? new Date(pair.pairCreatedAt).toISOString() : null);
   const age = Date.now() - new Date(pairCreatedAt).getTime();
   const buys1h = Number(pair.txns?.h1?.buys ?? 0);
   const sells1h = Number(pair.txns?.h1?.sells ?? 0);
