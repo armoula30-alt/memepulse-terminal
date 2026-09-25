@@ -18,4 +18,4 @@ data class SignalOutcomeEntity(val signalId: String, val horizonSeconds: Int, va
 @Entity(tableName = "system_events", primaryKeys = ["id"], indices = [Index("timestamp")])
 data class SystemEventEntity(val id: String, val timestamp: Long, val level: String, val type: String, val message: String)
 @Entity(tableName = "settings")
-data class SettingEntity(val key: String, val value: String)
+data class SettingEntity(@PrimaryKey val key: String, val value: String)
