@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); if (android.os.Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 700); enableEdgeToEdge(); setContent { SolanaSignalApp(vm) } }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable fun SolanaSignalApp(vm: MainViewModel) {
     val state by vm.state.collectAsState(); val diagnostics by vm.diagnostics.collectAsState(); val signals by vm.signals.collectAsState(); val tokens by vm.tokens.collectAsState(); var tab by remember { mutableIntStateOf(0) }; var key by remember { mutableStateOf("") }
     MaterialTheme(colorScheme = darkColorScheme(primary = androidx.compose.ui.graphics.Color(0xFF65E6A7), background = androidx.compose.ui.graphics.Color(0xFF07100F), surface = androidx.compose.ui.graphics.Color(0xFF0D1B18))) {
