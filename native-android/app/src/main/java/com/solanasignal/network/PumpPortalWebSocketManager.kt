@@ -22,7 +22,7 @@ class PumpPortalWebSocketManager(private val apiKey: suspend () -> String) {
     private var lastMessageAt = 0L
     private var messages = 0L
 
-    data class Diagnostics(val lastEventAt: Long? = null, val latencyMs: Long? = null, val reconnects: Int = 0, val parserErrors: Int = 0, val messages: Long = 0)
+    data class Diagnostics(val lastEventAt: Long? = null, val latencyMs: Long? = null, val reconnects: Int = 0, val parserErrors: Int = 0, val messages: Long = 0, val lastError: String? = null)
 
     fun start() { if (!stopped) return; stopped = false; connect() }
     fun stop() { stopped = true; socket?.close(1000, "stopped"); socket = null; _state.value = ConnectionState.DISCONNECTED }
@@ -34,7 +34,7 @@ class PumpPortalWebSocketManager(private val apiKey: suspend () -> String) {
     private fun connect() {
         scope.launch {
             val key = apiKey()
-            if (key.isBlank()) { _state.value = ConnectionState.DISCONNECTED; return@launch }
+            if (key.isBlank()) { _state.value = ConnectionState.DISCONNECTED; _diagnostics.value = _diagnostics.value.copy(lastError = "API key is missing"); return@launch }
             withContext(Dispatchers.Main) { _state.value = if (reconnectAttempt == 0) ConnectionState.CONNECTING else ConnectionState.RECONNECTING }
             val request = Request.Builder().url("wss://pumpportal.fun/api/data?api-key=${java.net.URLEncoder.encode(key, "UTF-8")}").build()
             socket = client.newWebSocket(request, listener)
@@ -44,8 +44,8 @@ class PumpPortalWebSocketManager(private val apiKey: suspend () -> String) {
     private val listener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) { reconnectAttempt = 0; _state.value = ConnectionState.CONNECTED; send(mapOf("method" to "subscribeNewToken")); send(mapOf("method" to "subscribeMigration")); trackedTokens.chunked(5000).forEach { send(mapOf("method" to "subscribeTokenTrade", "keys" to it)) }; trackedAccounts.chunked(5000).forEach { send(mapOf("method" to "subscribeAccountTrade", "keys" to it)) } }
         override fun onMessage(webSocket: WebSocket, text: String) { lastMessageAt = SystemClock.elapsedRealtime(); messages++; _diagnostics.value = _diagnostics.value.copy(lastEventAt = System.currentTimeMillis(), messages = messages); parse(text) }
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) { _state.value = ConnectionState.DISCONNECTED; scheduleReconnect() }
-        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) { if (!stopped) { _state.value = ConnectionState.RECONNECTING; scheduleReconnect() } }
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) { _state.value = ConnectionState.DISCONNECTED; _diagnostics.value = _diagnostics.value.copy(lastError = "WebSocket failure: ${t.javaClass.simpleName}"); scheduleReconnect() }
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) { if (!stopped) { _state.value = ConnectionState.RECONNECTING; _diagnostics.value = _diagnostics.value.copy(lastError = "WebSocket closed: $code"); scheduleReconnect() } }
     }
 
     private fun parse(text: String) {
