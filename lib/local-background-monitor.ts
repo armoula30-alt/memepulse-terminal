@@ -3,6 +3,7 @@ import * as BackgroundTask from "expo-background-task";
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 import { loadPumpPortalKey } from "./local-secrets";
+import { qualifyPumpCandidateAndNotify } from "./pumpportal-live";
 
 export const LOCAL_MARKET_TASK = "memepulse-local-market-monitor";
 const SEEN_KEY = "memepulse.local-monitor.seen.v1";
@@ -27,7 +28,7 @@ async function inspectPumpPortal(key: string) {
         const item = JSON.parse(String(message.data ?? "{}"));
         if (item.txType !== "create" || !item.mint) return;
         count += 1;
-        await Notifications.scheduleNotificationAsync({ content: { title: `PumpPortal catch: $${item.symbol ?? "TOKEN"}`, body: `New Solana token · initial buy ${item.initialBuy ?? "—"} · tap to inspect`, data: { address: String(item.mint) }, sound: "shopify_catch.wav" }, trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" } });
+        await qualifyPumpCandidateAndNotify(item);
       } catch {}
     };
     socket.onerror = () => { clearTimeout(timer); resolve(count); };

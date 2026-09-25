@@ -16,7 +16,7 @@ import {
 } from "react-native-safe-area-context";
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
-import { trpc, createTRPCClient } from "@/lib/trpc";
+import { trpc, createTRPCClient, LOCAL_ONLY, PUMPPORTAL_LIVE } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { startPumpPortalLiveStream, stopPumpPortalLiveStream } from "@/lib/pumpportal-live";
 
@@ -37,6 +37,7 @@ export default function RootLayout() {
   // Initialize Manus runtime for cookie injection from parent container
   useEffect(() => {
     initManusRuntime();
+    if (LOCAL_ONLY && !PUMPPORTAL_LIVE) return;
     void startPumpPortalLiveStream();
     return () => stopPumpPortalLiveStream();
   }, []);

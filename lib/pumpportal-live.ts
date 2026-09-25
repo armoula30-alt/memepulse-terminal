@@ -1,6 +1,8 @@
 import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loadPumpPortalKey } from "./local-secrets";
+import { evaluatePumpSniperCandidate } from "./sniper-profile";
 
 let socket: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -10,6 +12,7 @@ let pumping = false;
 const pending = new Map<string, any>();
 const inFlight = new Set<string>();
 const lastAttempt = new Map<string, number>();
+const notifiedLaunches = new Set<string>();
 const TOKENS_KEY = "memepulse.pumpportal.tokens.v1";
 const MAX_QUALIFIED_TOKENS = 120;
 const MAX_PENDING_TOKENS = 150;
@@ -19,6 +22,8 @@ const MIN_LIQUIDITY_USD = 10_000;
 const ENRICH_CONCURRENCY = 8;
 const RETRY_AFTER_MS = 15_000;
 const DEX_TOKEN_URL = "https://api.dexscreener.com/latest/dex/tokens/";
+const SOL_TOKEN = "So11111111111111111111111111111111111111112";
+const RUGCHECK_URL = "https://api.rugcheck.xyz/v1/tokens/";
 
 export type PumpPortalTokenSeed = {
   address: string;
@@ -52,6 +57,40 @@ type Pair = {
   pairCreatedAt?: number;
   pairAddress?: string;
 };
+
+export async function qualifyPumpCandidateAndNotify(item: any) {
+  await new Promise((resolve) => setTimeout(resolve, 2_500));
+  try {
+    const [solResponse, tokenResponse, riskResponse] = await Promise.all([
+      fetch(`${DEX_TOKEN_URL}${SOL_TOKEN}`),
+      fetch(`${DEX_TOKEN_URL}${encodeURIComponent(String(item.mint))}`),
+      fetch(`${RUGCHECK_URL}${encodeURIComponent(String(item.mint))}/report/summary`),
+    ]);
+    const solPairs = solResponse.ok ? ((await solResponse.json()) as { pairs?: Pair[] }).pairs ?? [] : [];
+    const pairs = tokenResponse.ok ? ((await tokenResponse.json()) as { pairs?: Pair[] }).pairs ?? [] : [];
+    const risk = riskResponse.ok ? (await riskResponse.json()) as { totalHolders?: number } : {};
+    const pair = pairs.find((candidate) => candidate.chainId === "solana") ?? pairs[0];
+    const solPriceUsd = Number(solPairs[0]?.priceUsd ?? 0);
+    const pairCreatedAt = typeof pair?.pairCreatedAt === "number" ? pair.pairCreatedAt : Date.now();
+    const decision = evaluatePumpSniperCandidate({
+      ageMinutes: Math.max(0, (Date.now() - pairCreatedAt) / 60_000),
+      initialBuyUsd: typeof item.initialBuy === "number" && solPriceUsd > 0 ? item.initialBuy * solPriceUsd : null,
+      marketCapUsd: typeof pair?.marketCap === "number" ? pair.marketCap : null,
+      holders: typeof risk.totalHolders === "number" ? risk.totalHolders : null,
+    });
+    if (!decision.eligible || notifiedLaunches.has(String(item.mint))) return;
+    notifiedLaunches.add(String(item.mint));
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `PUMP CANDIDATE: $${String(item.symbol ?? "TOKEN").slice(0, 16)}`,
+        body: `Age <3m · initial buy $${Math.round(item.initialBuy * solPriceUsd).toLocaleString()} · MC $${Math.round(pair?.marketCap ?? 0).toLocaleString()} · ${risk.totalHolders} holders`,
+        data: { address: String(item.mint), reasons: decision.reasons },
+        sound: "shopify_catch.wav",
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, repeats: false, channelId: "meme-catch-v2" },
+    });
+  } catch {}
+}
 
 export async function loadPumpPortalTokens(): Promise<PumpPortalTokenSeed[]> {
   try {
@@ -152,6 +191,7 @@ async function pumpQueue() {
 function enqueue(item: any) {
   const address = typeof item?.mint === "string" ? item.mint : "";
   if (!address || item.txType !== "create") return;
+  void qualifyPumpCandidateAndNotify(item);
   const receivedAt = new Date().toISOString();
   pending.delete(address);
   pending.set(address, { ...item, receivedAt, receivedAtMs: Date.now() });
@@ -172,5 +212,5 @@ async function connect() {
   socket.onclose = reconnect;
 }
 
-export async function startPumpPortalLiveStream() { running = true; await connect(); return Boolean(lastKey); }
+export async function startPumpPortalLiveStream() { running = true; if (Platform.OS !== "web") await Notifications.requestPermissionsAsync(); await connect(); return Boolean(lastKey); }
 export function stopPumpPortalLiveStream() { running = false; pending.clear(); inFlight.clear(); if (reconnectTimer) clearTimeout(reconnectTimer); reconnectTimer = null; socket?.close(); socket = null; }
