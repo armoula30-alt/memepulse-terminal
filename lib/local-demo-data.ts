@@ -1,6 +1,8 @@
 import type { RiskReport, HistoricalPoint, MarketToken } from "@/server/market-data";
 import { loadPumpPortalTokens } from "@/lib/pumpportal-live";
 
+const LIVE_BUILD = process.env.EXPO_PUBLIC_PUMPPORTAL_LIVE === "true";
+
 const now = Date.now();
 
 const addresses = {
@@ -103,14 +105,25 @@ export async function localLatest() {
     observedAt: item.capturedAt,
   }));
   return {
-    source: liveTokens.length ? "PumpPortal live + local demo fallback" : "Local demo dataset",
+    source: LIVE_BUILD ? "PumpPortal live" : liveTokens.length ? "PumpPortal live + local demo fallback" : "Local demo dataset",
     chain: "solana",
     observedAt: new Date().toISOString(),
-    tokens: [...liveTokens, ...LOCAL_TOKENS].map((item) => ({ ...item, observedAt: new Date().toISOString() })),
+    tokens: (LIVE_BUILD ? liveTokens : [...liveTokens, ...LOCAL_TOKENS]).map((item) => ({ ...item, observedAt: new Date().toISOString() })),
   };
 }
 
 export function localNewTokens() {
+  if (LIVE_BUILD) {
+    return {
+      source: "PumpPortal live",
+      observedAt: new Date().toISOString(),
+      stream: { configured: true, connected: false, source: "pumpportal", trackedTokens: 0, note: "Waiting for the PumpPortal stream and API key." },
+      events: [],
+      firstTrades: [],
+      tokens: [],
+      allTokens: [],
+    };
+  }
   return {
     source: "Local demo dataset",
     observedAt: new Date().toISOString(),
