@@ -2,6 +2,7 @@ package com.solanasignal.data
 
 import androidx.room.Entity
 import androidx.room.Index
+import androidx.room.PrimaryKey
 
 @Entity(tableName = "tokens", primaryKeys = ["mint"], indices = [Index("createdAt")])
 data class TokenEntity(val mint: String, val symbol: String?, val name: String?, val creator: String?, val uri: String?, val createdAt: Long?, val firstSeenAt: Long, val marketCapUsd: Double?, val liquidityUsd: Double?, val priceUsd: Double?, val lifecycle: String = "UNKNOWN", val source: String = "pumpportal")
