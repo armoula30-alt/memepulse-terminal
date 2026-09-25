@@ -6,7 +6,7 @@ on:
     branches: [main, 'feat/realtime-demo-trading-and-app-icon']
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   CI: true
@@ -62,8 +62,20 @@ jobs:
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: MemePulse-Terminal-APK
           path: MemePulse-Terminal-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish APK to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="apk-${GITHUB_RUN_ID}"
+          gh release create "$TAG" MemePulse-Terminal-release.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "MemePulse Android APK $GITHUB_RUN_NUMBER" \
+            --notes "Android test APK with PumpPortal candidate notifications. Paper trading only."
