@@ -53,9 +53,11 @@ class PumpPortalWebSocketManager(private val apiKey: suspend () -> String) {
             val obj = Json.parseToJsonElement(text).jsonObject
             val mint = obj["mint"]?.jsonPrimitive?.contentOrNull ?: return@runCatching
             val now = System.currentTimeMillis()
+            val txType = obj["txType"]?.jsonPrimitive?.contentOrNull?.lowercase()
             when {
-                obj["txType"] != null -> _events.tryEmit(NormalizedTradeEvent(mint, obj["txType"]?.jsonPrimitive?.contentOrNull, obj["traderPublicKey"]?.jsonPrimitive?.contentOrNull, obj["solAmount"]?.jsonPrimitive?.doubleOrNull, obj["tokenAmount"]?.jsonPrimitive?.doubleOrNull, obj["marketCapSol"]?.jsonPrimitive?.doubleOrNull, obj["signature"]?.jsonPrimitive?.contentOrNull ?: obj["txHash"]?.jsonPrimitive?.contentOrNull, now, obj))
                 obj["pool"] != null || obj["migration"] != null -> _events.tryEmit(NormalizedMigrationEvent(mint, now, obj))
+                txType == "create" -> _events.tryEmit(NormalizedTokenCreatedEvent(mint, obj["symbol"]?.jsonPrimitive?.contentOrNull, obj["name"]?.jsonPrimitive?.contentOrNull, obj["traderPublicKey"]?.jsonPrimitive?.contentOrNull, obj["uri"]?.jsonPrimitive?.contentOrNull, now, obj))
+                txType == "buy" || txType == "sell" -> _events.tryEmit(NormalizedTradeEvent(mint, txType, obj["traderPublicKey"]?.jsonPrimitive?.contentOrNull, obj["solAmount"]?.jsonPrimitive?.doubleOrNull, obj["tokenAmount"]?.jsonPrimitive?.doubleOrNull, obj["marketCapSol"]?.jsonPrimitive?.doubleOrNull, obj["signature"]?.jsonPrimitive?.contentOrNull ?: obj["txHash"]?.jsonPrimitive?.contentOrNull, now, obj))
                 else -> _events.tryEmit(NormalizedTokenCreatedEvent(mint, obj["symbol"]?.jsonPrimitive?.contentOrNull, obj["name"]?.jsonPrimitive?.contentOrNull, obj["traderPublicKey"]?.jsonPrimitive?.contentOrNull, obj["uri"]?.jsonPrimitive?.contentOrNull, now, obj))
             }
         }.onFailure { _diagnostics.value = _diagnostics.value.copy(parserErrors = _diagnostics.value.parserErrors + 1) }
